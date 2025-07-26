@@ -54,9 +54,14 @@ public class UserService {
                     user.setFirstName(updatedUser.getFirstName());
                     user.setLastName(updatedUser.getLastName());
                     user.setEmail(updatedUser.getEmail());
-                    user.setPasswordHash(updatedUser.getPasswordHash());
                     user.setPhoneNumber(updatedUser.getPhoneNumber());
                     user.setIsActive(updatedUser.getIsActive());
+
+                    // Sadece yeni şifre gönderildiyse güncelle
+                    if (updatedUser.getPasswordHash() != null && !updatedUser.getPasswordHash().isEmpty()) {
+                        user.setPasswordHash(passwordEncoder.encode(updatedUser.getPasswordHash()));
+                    }
+
                     return userRepository.save(user);
                 })
                 .orElseThrow(() -> new RuntimeException("User not found with id " + id));
@@ -74,6 +79,18 @@ public class UserService {
         return userRepository.save(user);
     }
 
+
+    public void updatePassword(Long id, com.meldateksari.eticaret.auth.dto.UpdatePasswordRequestDto dto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id " + id));
+
+        if (dto.getNewPassword() != null && !dto.getNewPassword().isEmpty()) {
+            user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
+            userRepository.save(user);
+        } else {
+            throw new IllegalArgumentException("New password cannot be null or empty.");
+        }
+    }
 
     public AuthResponse register(RegisterRequestDto dto) {
         User user = userRepository.findByEmail(dto.getEmail()).orElse(null);

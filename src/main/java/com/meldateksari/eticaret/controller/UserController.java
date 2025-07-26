@@ -42,6 +42,16 @@ public class UserController {
         }
     }
 
+    @PutMapping("/{id}/password")
+    public ResponseEntity<Void> updateUserPassword(@PathVariable Long id, @RequestBody com.meldateksari.eticaret.auth.dto.UpdatePasswordRequestDto dto) {
+        try {
+            userService.updatePassword(id, dto);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
