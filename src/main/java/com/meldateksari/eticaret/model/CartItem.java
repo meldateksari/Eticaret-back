@@ -1,5 +1,6 @@
 package com.meldateksari.eticaret.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,6 +22,7 @@ public class CartItem {
 
     @ManyToOne(optional = false, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "cart_id", nullable = false)
+    @JsonIgnore
     private Cart cart;
 
     @ManyToOne(optional = false)

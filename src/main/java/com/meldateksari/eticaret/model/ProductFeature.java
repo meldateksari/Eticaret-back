@@ -1,5 +1,6 @@
 package com.meldateksari.eticaret.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -17,6 +18,7 @@ public class ProductFeature {
 
     @OneToOne
     @JoinColumn(name = "product_id", nullable = false, unique = true)
+    @JsonIgnore
     private Product product;
 
     private String material;

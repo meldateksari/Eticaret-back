@@ -1,5 +1,6 @@
 package com.meldateksari.eticaret.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -27,9 +28,11 @@ public class Category {
     // Kategori - Üst Kategori ilişkisi (parent)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", foreignKey = @ForeignKey(name = "fk_categories_parent"))
+    @JsonIgnore
     private Category parent;
 
     // Kategori - Alt Kategoriler ilişkisi (children)
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<Category> children = new HashSet<>();
 }

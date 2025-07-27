@@ -1,5 +1,6 @@
 package com.meldateksari.eticaret.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,6 +20,7 @@ public class Review {
 
     @ManyToOne(optional = false, cascade = CascadeType.REMOVE)
     @JoinColumn(name = "product_id", nullable = false)
+    @JsonIgnore
     private Product product;
 
     @ManyToOne(optional = false, cascade = CascadeType.REMOVE)

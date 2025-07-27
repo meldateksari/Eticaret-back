@@ -1,6 +1,7 @@
 package com.meldateksari.eticaret.controller;
 
 import com.meldateksari.eticaret.model.Product;
+import com.meldateksari.eticaret.model.ProductResponseDto;
 import com.meldateksari.eticaret.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,7 +17,7 @@ public class ProductController {
     private ProductService productService;
 
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
+    public ResponseEntity<List<ProductResponseDto>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 

@@ -2,12 +2,16 @@ package com.meldateksari.eticaret.service;
 
 import com.meldateksari.eticaret.model.Category;
 import com.meldateksari.eticaret.model.Product;
+import com.meldateksari.eticaret.model.ProductImage;
+import com.meldateksari.eticaret.model.ProductResponseDto;
 import com.meldateksari.eticaret.repository.CategoryRepository;
 import com.meldateksari.eticaret.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -18,8 +22,27 @@ public class ProductService {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<ProductResponseDto> getAllProducts() {
+        return productRepository.findAll().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    private ProductResponseDto convertToDto(Product product) {
+        return ProductResponseDto.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .slug(product.getSlug())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .stockQuantity(product.getStockQuantity())
+                .brand(product.getBrand())
+                .imageUrl(product.getImageUrl())
+                .images(product.getImages().stream()
+                        .map(ProductImage::getImageUrl)
+                        .collect(Collectors.toList()))
+                .build();
     }
 
     public Product getProductById(Long id) {
