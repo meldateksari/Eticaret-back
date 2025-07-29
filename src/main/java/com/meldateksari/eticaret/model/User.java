@@ -1,5 +1,6 @@
 package com.meldateksari.eticaret.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.meldateksari.eticaret.auth.enums.Role;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -56,6 +57,7 @@ public class User implements UserDetails {
     private Set<Role> roles = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Address> addresses = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -103,4 +105,5 @@ public class User implements UserDetails {
     public boolean isEnabled() {
         return isActive != null && isActive;
     }
+
 }

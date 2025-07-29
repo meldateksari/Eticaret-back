@@ -5,7 +5,9 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Entity
@@ -81,6 +83,15 @@ public class Product {
 
     @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private ProductFeature productFeature;
+    // YENİ EKLENECEK KISIM: Many-to-Many ilişkisi için
+    // Bu, ürünün ait olduğu 'cinsiyet' gibi ek kategorileri veya etiketleri tutacak
+    @ManyToMany
+    @JoinTable(
+            name = "product_gender_categories", // Ara tablo adı
+            joinColumns = @JoinColumn(name = "product_id"), // Product Entity'nin FK'sı
+            inverseJoinColumns = @JoinColumn(name = "category_id") // Category Entity'nin FK'sı
+    )
+    private Set<Category> genderCategories = new HashSet<>(); // Set kullanmak, duplikasyonu önler
 
 
 }

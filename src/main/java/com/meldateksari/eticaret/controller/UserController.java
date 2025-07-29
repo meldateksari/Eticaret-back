@@ -1,5 +1,6 @@
 package com.meldateksari.eticaret.controller;
 
+import com.meldateksari.eticaret.auth.dto.UpdatePasswordRequestDto;
 import com.meldateksari.eticaret.auth.enums.Role;
 import com.meldateksari.eticaret.model.User;
 import com.meldateksari.eticaret.service.UserService;
@@ -43,7 +44,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}/password")
-    public ResponseEntity<Void> updateUserPassword(@PathVariable Long id, @RequestBody com.meldateksari.eticaret.auth.dto.UpdatePasswordRequestDto dto) {
+    public ResponseEntity<Void> updateUserPassword(@PathVariable Long id, @RequestBody UpdatePasswordRequestDto dto) {
         try {
             userService.updatePassword(id, dto);
             return ResponseEntity.noContent().build();
@@ -51,6 +52,7 @@ public class UserController {
             return ResponseEntity.notFound().build();
         }
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {

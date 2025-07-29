@@ -1,6 +1,7 @@
 package com.meldateksari.eticaret.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -35,4 +36,10 @@ public class Category {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<Category> children = new HashSet<>();
+
+    // YENİ EKLENECEK KISIM: Many-to-Many ilişkisi için
+    // Bir cinsiyet kategorisine ait olan ürünleri tutacak
+    @ManyToMany(mappedBy = "genderCategories") // Product sınıfındaki field adını belirtiyoruz
+    @JsonIgnore // JSON serileştirmesinde sonsuz döngüyü engellemek için
+    private Set<Product> products = new HashSet<>();
 }

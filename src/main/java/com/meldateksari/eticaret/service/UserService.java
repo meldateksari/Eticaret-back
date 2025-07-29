@@ -3,6 +3,7 @@ package com.meldateksari.eticaret.service;
 import com.meldateksari.eticaret.auth.dto.AuthResponse;
 import com.meldateksari.eticaret.auth.dto.LoginRequestDto;
 import com.meldateksari.eticaret.auth.dto.RegisterRequestDto;
+import com.meldateksari.eticaret.auth.dto.UpdatePasswordRequestDto;
 import com.meldateksari.eticaret.auth.enums.Role;
 import com.meldateksari.eticaret.auth.config.SecurityConfig;
 import com.meldateksari.eticaret.auth.service.JwtService;
@@ -80,17 +81,30 @@ public class UserService {
     }
 
 
-    public void updatePassword(Long id, com.meldateksari.eticaret.auth.dto.UpdatePasswordRequestDto dto) {
+    public void updatePassword(Long id, UpdatePasswordRequestDto dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id " + id));
 
-        if (dto.getNewPassword() != null && !dto.getNewPassword().isEmpty()) {
-            user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
-            userRepository.save(user);
-        } else {
+        // 1. currentPassword kontrolü
+        if (dto.getCurrentPassword() == null || dto.getCurrentPassword().isEmpty()) {
+            throw new IllegalArgumentException("Current password cannot be empty.");
+        }
+
+        if (!passwordEncoder.matches(dto.getCurrentPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect.");
+        }
+
+        // 2. newPassword kontrolü
+        if (dto.getNewPassword() == null || dto.getNewPassword().isEmpty()) {
             throw new IllegalArgumentException("New password cannot be null or empty.");
         }
+
+        // 3. Şifreyi güncelle
+        user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
+        userRepository.save(user);
     }
+
+
 
     public AuthResponse register(RegisterRequestDto dto) {
         User user = userRepository.findByEmail(dto.getEmail()).orElse(null);

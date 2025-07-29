@@ -1,11 +1,11 @@
 package com.meldateksari.eticaret.controller;
 
-import com.meldateksari.eticaret.model.Order;
+import com.meldateksari.eticaret.dto.CreateOrderRequest;
+import com.meldateksari.eticaret.dto.OrderDto;
 import com.meldateksari.eticaret.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -19,32 +19,18 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<Order> createOrder(@RequestParam Long userId,
-                                             @RequestParam(required = false) Long shippingAddressId,
-                                             @RequestParam(required = false) Long billingAddressId,
-                                             @RequestParam BigDecimal totalAmount,
-                                             @RequestParam String status,
-                                             @RequestParam String paymentStatus,
-                                             @RequestParam(required = false) String trackingNumber) {
-
-        return ResponseEntity.ok(orderService.createOrder(
-                userId,
-                shippingAddressId,
-                billingAddressId,
-                totalAmount,
-                status,
-                paymentStatus,
-                trackingNumber
-        ));
+    public ResponseEntity<OrderDto> createOrder(@RequestBody CreateOrderRequest request) {
+        return ResponseEntity.ok(orderService.createOrder(request));
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Order>> getOrdersByUser(@PathVariable Long userId) {
+    public ResponseEntity<List<OrderDto>> getOrdersByUser(@PathVariable Long userId) {
         return ResponseEntity.ok(orderService.getOrdersByUserId(userId));
     }
 
+
     @GetMapping("/{orderId}")
-    public ResponseEntity<Order> getOrderById(@PathVariable Long orderId) {
+    public ResponseEntity<OrderDto> getOrderById(@PathVariable Long orderId) {
         return ResponseEntity.ok(orderService.getOrderById(orderId));
     }
 

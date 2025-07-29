@@ -1,19 +1,14 @@
-package com.meldateksari.eticaret.model;
+package com.meldateksari.eticaret.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.Builder; // Builder'ı import et
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class ProductResponseDto {
-
     private Long id;
     private String name;
     private String slug;
@@ -22,5 +17,11 @@ public class ProductResponseDto {
     private Integer stockQuantity;
     private String brand;
     private String imageUrl;
+    private Boolean isActive;
+    private BigDecimal weight;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private CategoryDto category;
+    private List<CategoryDto> genderCategories;
     private List<String> images;
 }

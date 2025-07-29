@@ -1,5 +1,8 @@
 package com.meldateksari.eticaret.service;
 
+import com.meldateksari.eticaret.dto.CreateOrderRequest;
+import com.meldateksari.eticaret.dto.OrderDto;
+import com.meldateksari.eticaret.dto.OrderMapper;
 import com.meldateksari.eticaret.model.Address;
 import com.meldateksari.eticaret.model.Order;
 import com.meldateksari.eticaret.model.User;
@@ -8,8 +11,8 @@ import com.meldateksari.eticaret.repository.OrderRepository;
 import com.meldateksari.eticaret.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
@@ -24,45 +27,42 @@ public class OrderService {
         this.addressRepository = addressRepository;
     }
 
-    public Order createOrder(Long userId,
-                             Long shippingAddressId,
-                             Long billingAddressId,
-                             BigDecimal totalAmount,
-                             String status,
-                             String paymentStatus,
-                             String trackingNumber) {
-
-        User user = userRepository.findById(userId)
+    public OrderDto createOrder(CreateOrderRequest request) {
+        User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        Address shippingAddress = shippingAddressId != null ?
-                addressRepository.findById(shippingAddressId)
+        Address shippingAddress = request.getShippingAddressId() != null ?
+                addressRepository.findById(request.getShippingAddressId())
                         .orElseThrow(() -> new RuntimeException("Shipping address not found")) : null;
 
-        Address billingAddress = billingAddressId != null ?
-                addressRepository.findById(billingAddressId)
+        Address billingAddress = request.getBillingAddressId() != null ?
+                addressRepository.findById(request.getBillingAddressId())
                         .orElseThrow(() -> new RuntimeException("Billing address not found")) : null;
 
         Order order = Order.builder()
                 .user(user)
                 .shippingAddress(shippingAddress)
                 .billingAddress(billingAddress)
-                .totalAmount(totalAmount)
-                .status(status)
-                .paymentStatus(paymentStatus)
-                .trackingNumber(trackingNumber)
+                .totalAmount(request.getTotalAmount())
+                .status(request.getStatus())
+                .paymentStatus(request.getPaymentStatus())
+                .trackingNumber(request.getTrackingNumber())
                 .build();
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+        return OrderMapper.toOrderDto(savedOrder);
     }
 
-    public List<Order> getOrdersByUserId(Long userId) {
-        return orderRepository.findByUserId(userId);
+    public List<OrderDto> getOrdersByUserId(Long userId) {
+        return orderRepository.findByUserId(userId).stream()
+                .map(OrderMapper::toOrderDto)
+                .collect(Collectors.toList());
     }
 
-    public Order getOrderById(Long orderId) {
-        return orderRepository.findById(orderId)
+    public OrderDto getOrderById(Long orderId) {
+        Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Order not found"));
+        return OrderMapper.toOrderDto(order);
     }
 
     public void deleteOrder(Long orderId) {
