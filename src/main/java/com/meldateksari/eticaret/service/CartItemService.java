@@ -6,6 +6,7 @@ import com.meldateksari.eticaret.model.Product;
 import com.meldateksari.eticaret.repository.CartItemRepository;
 import com.meldateksari.eticaret.repository.CartRepository;
 import com.meldateksari.eticaret.repository.ProductRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -49,11 +50,13 @@ public class CartItemService {
     public List<CartItem> getCartItems(Long cartId) {
         return cartItemRepository.findByCartId(cartId);
     }
-
     public void removeItem(Long cartItemId) {
-        cartItemRepository.deleteById(cartItemId);
+        if (cartItemRepository.existsById(cartItemId)) {
+            cartItemRepository.deleteById(cartItemId);
+        } else {
+            throw new EntityNotFoundException("CartItem bulunamadı: ID=" + cartItemId);
+        }
     }
-
     public void clearCart(Long cartId) {
         cartItemRepository.deleteByCartId(cartId);
     }
