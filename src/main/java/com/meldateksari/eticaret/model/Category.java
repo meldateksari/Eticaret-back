@@ -28,8 +28,8 @@ public class Category {
 
     // Kategori - Üst Kategori ilişkisi (parent)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id", foreignKey = @ForeignKey(name = "fk_categories_parent"))
     @JsonIgnore
+    @JoinColumn(name = "parent_id", foreignKey = @ForeignKey(name = "fk_categories_parent"))
     private Category parent;
 
     // Kategori - Alt Kategoriler ilişkisi (children)

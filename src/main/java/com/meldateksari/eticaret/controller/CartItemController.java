@@ -1,11 +1,13 @@
 package com.meldateksari.eticaret.controller;
 
+import com.meldateksari.eticaret.dto.CartItemDto;
 import com.meldateksari.eticaret.model.CartItem;
 import com.meldateksari.eticaret.service.CartItemService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/cart-items")
@@ -18,15 +20,20 @@ public class CartItemController {
     }
 
     @PostMapping
-    public ResponseEntity<CartItem> addOrUpdateCartItem(@RequestParam Long cartId,
-                                                        @RequestParam Long productId,
-                                                        @RequestParam(defaultValue = "1") int quantity) {
-        return ResponseEntity.ok(cartItemService.addOrUpdateCartItem(cartId, productId, quantity));
+    public ResponseEntity<CartItemDto> addOrUpdateCartItem(@RequestParam Long cartId,
+                                                           @RequestParam Long productId,
+                                                           @RequestParam(defaultValue = "1") int quantity) {
+        CartItem item = cartItemService.addOrUpdateCartItem(cartId, productId, quantity);
+        return ResponseEntity.ok(convertToCartItemDto(item));
     }
 
     @GetMapping("/cart/{cartId}")
-    public ResponseEntity<List<CartItem>> getItemsByCart(@PathVariable Long cartId) {
-        return ResponseEntity.ok(cartItemService.getCartItems(cartId));
+    public ResponseEntity<List<CartItemDto>> getItemsByCart(@PathVariable Long cartId) {
+        List<CartItem> items = cartItemService.getCartItems(cartId);
+        List<CartItemDto> dtoList = items.stream()
+                .map(this::convertToCartItemDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(dtoList);
     }
 
     @DeleteMapping("/{itemId}")
@@ -39,5 +46,16 @@ public class CartItemController {
     public ResponseEntity<Void> clearCart(@PathVariable Long cartId) {
         cartItemService.clearCart(cartId);
         return ResponseEntity.noContent().build();
+    }
+
+    private CartItemDto convertToCartItemDto(CartItem item) {
+        return CartItemDto.builder()
+                .id(item.getId())
+                .productId(item.getProduct().getId())
+                .productName(item.getProduct().getName())
+                .imageUrl(item.getProduct().getImageUrl())
+                .price(item.getProduct().getPrice())
+                .quantity(item.getQuantity())
+                .build();
     }
 }

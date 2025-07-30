@@ -1,6 +1,7 @@
 package com.meldateksari.eticaret.service;
 
 import com.meldateksari.eticaret.model.Cart;
+import com.meldateksari.eticaret.model.CartItem;
 import com.meldateksari.eticaret.model.User;
 import com.meldateksari.eticaret.repository.CartRepository;
 import com.meldateksari.eticaret.repository.UserRepository;
@@ -41,5 +42,8 @@ public class CartService {
     public void deleteCart(Long cartId) {
         cartRepository.deleteById(cartId);
     }
+
+
+
 }
 
