@@ -11,7 +11,7 @@ public class OrderMapper {
         OrderDto orderDto = new OrderDto();
         orderDto.setId(order.getId());
         orderDto.setUserId(order.getUser().getId());
-        orderDto.setOrderDate(order.getOrderDate());
+        orderDto.setOrderDate(order.getOrderDate().toString());
         orderDto.setTotalAmount(order.getTotalAmount());
         orderDto.setStatus(order.getStatus());
         if (order.getShippingAddress() != null) {

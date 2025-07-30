@@ -3,6 +3,7 @@ package com.meldateksari.eticaret.service;
 import com.meldateksari.eticaret.dto.CreateOrderRequest;
 import com.meldateksari.eticaret.dto.OrderDto;
 import com.meldateksari.eticaret.dto.OrderMapper;
+import com.meldateksari.eticaret.enums.PaymentStatus;
 import com.meldateksari.eticaret.model.Address;
 import com.meldateksari.eticaret.model.Order;
 import com.meldateksari.eticaret.model.User;
@@ -11,7 +12,9 @@ import com.meldateksari.eticaret.repository.OrderRepository;
 import com.meldateksari.eticaret.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,15 +46,17 @@ public class OrderService {
                 .user(user)
                 .shippingAddress(shippingAddress)
                 .billingAddress(billingAddress)
-                .totalAmount(request.getTotalAmount())
-                .status(request.getStatus())
-                .paymentStatus(request.getPaymentStatus())
-                .trackingNumber(request.getTrackingNumber())
+                .totalAmount(request.getTotalAmount() != null ? request.getTotalAmount() : BigDecimal.ZERO)
+                .status(request.getStatus() != null ? request.getStatus() : "CREATED")
+                .paymentStatus(request.getPaymentStatus() != null ? request.getPaymentStatus() : PaymentStatus.PENDING)
+                .trackingNumber(request.getTrackingNumber() != null ? request.getTrackingNumber() : UUID.randomUUID().toString())
                 .build();
+
 
         Order savedOrder = orderRepository.save(order);
         return OrderMapper.toOrderDto(savedOrder);
     }
+
 
     public List<OrderDto> getOrdersByUserId(Long userId) {
         return orderRepository.findByUserId(userId).stream()

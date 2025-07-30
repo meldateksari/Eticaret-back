@@ -1,8 +1,8 @@
 package com.meldateksari.eticaret.model;
-
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.meldateksari.eticaret.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ public class Order {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "order_date", nullable = false, updatable = false)
     private LocalDateTime orderDate;
 
@@ -45,8 +46,9 @@ public class Order {
     @Column(nullable = false, length = 50)
     private String status; // örn: PENDING, SHIPPED, DELIVERED
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false, length = 50)
-    private String paymentStatus; // örn: PAID, UNPAID, REFUNDED
+    private PaymentStatus paymentStatus;
 
     @Column(name = "tracking_number", length = 100)
     private String trackingNumber;
