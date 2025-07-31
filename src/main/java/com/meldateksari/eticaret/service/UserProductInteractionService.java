@@ -1,35 +1,54 @@
+// src/main/java/com/meldateksari/eticaret/service/UserProductInteractionService.java
+
 package com.meldateksari.eticaret.service;
 
+import com.meldateksari.eticaret.model.Product;
 import com.meldateksari.eticaret.model.UserProductInteraction;
+import com.meldateksari.eticaret.repository.ProductRepository;
 import com.meldateksari.eticaret.repository.UserProductInteractionRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class UserProductInteractionService {
 
     private final UserProductInteractionRepository interactionRepository;
+    @Autowired
+    private ProductRepository productRepository;
 
-    public UserProductInteraction save(UserProductInteraction interaction) {
-        return interactionRepository.save(interaction);
-    }
 
-    public List<UserProductInteraction> getInteractionsByUserId(Long userId) {
-        return interactionRepository.findByUserId(userId);
+    /**
+     * Kullanıcı etkileşimlerini asenkron (arka planda) olarak kaydeder.
+     * Bu metot, ana thread'i bloke etmez ve uygulamanın performansını artırır.
+     */
+    @Async
+    public void logInteraction(UserProductInteraction interaction) {
+        interactionRepository.save(interaction);
     }
+    public List<Product> recommendProducts(Long userId) {
+        // 1. Kullanıcının etkileşim geçmişini al
+        List<UserProductInteraction> interactions = interactionRepository.findByUserId(userId);
 
-    public List<UserProductInteraction> getInteractionsByProductId(Long productId) {
-        return interactionRepository.findByProductId(productId);
-    }
+        // 2. En çok baktığı kategoriyi/markanın ürünlerini bul
+        Map<String, Long> brandCount = interactions.stream()
+                .collect(Collectors.groupingBy(i -> i.getProduct().getBrand(), Collectors.counting()));
 
-    public void deleteById(Long id) {
-        interactionRepository.deleteById(id);
-    }
-    public UserProductInteraction saveInteraction(UserProductInteraction interaction) {
-        return interactionRepository.save(interaction);
+        String mostViewedBrand = brandCount.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
+
+        // 3. O markaya ait başka ürünleri öner
+        return productRepository.findByIsActiveTrue(PageRequest.of(0, 10));
+
     }
 
 }

@@ -10,10 +10,13 @@ import com.meldateksari.eticaret.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -35,10 +38,13 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
     public ProductResponseDto getProductById(Long id) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found with id: " + id));
+        Optional<Product> optionalProduct = productRepository.findById(id);
+        if (optionalProduct.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
+        }
+
+        Product product = optionalProduct.get();
         return convertToDto(product);
     }
 
@@ -105,7 +111,7 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    private ProductResponseDto convertToDto(Product product) {
+    public ProductResponseDto convertToDto(Product product) {
         ProductResponseDto.ProductResponseDtoBuilder builder = ProductResponseDto.builder()
                 .id(product.getId())
                 .name(product.getName())

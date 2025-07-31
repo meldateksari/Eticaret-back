@@ -1,14 +1,13 @@
 package com.meldateksari.eticaret.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @Entity
@@ -35,9 +34,9 @@ public class Product {
     private Integer stockQuantity;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JsonIgnore
     @JoinColumn(name = "category_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_products_category"))
+    @JsonIgnore
     private Category category;
 
     @Column(length = 100)
@@ -68,6 +67,7 @@ public class Product {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductImage> images;
 
@@ -85,15 +85,14 @@ public class Product {
 
     @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private ProductFeature productFeature;
-    // YENİ EKLENECEK KISIM: Many-to-Many ilişkisi için
-    // Bu, ürünün ait olduğu 'cinsiyet' gibi ek kategorileri veya etiketleri tutacak
+
+    // Cinsiyet kategorisi gibi çoktan çoğa ilişki
     @ManyToMany
     @JoinTable(
-            name = "product_gender_categories", // Ara tablo adı
-            joinColumns = @JoinColumn(name = "product_id"), // Product Entity'nin FK'sı
-            inverseJoinColumns = @JoinColumn(name = "category_id") // Category Entity'nin FK'sı
+            name = "product_gender_categories",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id")
     )
-    private Set<Category> genderCategories = new HashSet<>(); // Set kullanmak, duplikasyonu önler
-
-
+    @JsonManagedReference
+    private Set<Category> genderCategories = new HashSet<>();
 }

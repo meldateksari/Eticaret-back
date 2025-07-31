@@ -2,7 +2,10 @@ package com.meldateksari.eticaret.controller;
 
 import com.meldateksari.eticaret.auth.dto.UpdatePasswordRequestDto;
 import com.meldateksari.eticaret.auth.enums.Role;
+import com.meldateksari.eticaret.dto.ProductResponseDto;
+import com.meldateksari.eticaret.model.Product;
 import com.meldateksari.eticaret.model.User;
+import com.meldateksari.eticaret.service.UserProductInteractionService;
 import com.meldateksari.eticaret.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +19,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private UserProductInteractionService interactionService;
+
 
     @GetMapping
     public List<User> getAllUsers() {
@@ -53,7 +59,6 @@ public class UserController {
         }
     }
 
-
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
@@ -62,6 +67,20 @@ public class UserController {
     @PostMapping("/{userId}/roles/{role}")
     public ResponseEntity<User> assignRoleToUser(@PathVariable Long userId, @PathVariable Role role) {
         return ResponseEntity.ok(userService.assignRoleToUser(userId, role));
+    }
+    @GetMapping("/{userId}/recommended-products")
+    public ResponseEntity<List<ProductResponseDto>> getRecommendedProducts(@PathVariable Long userId) {
+        List<Product> recommended = interactionService.recommendProducts(userId);
+        List<ProductResponseDto> response = recommended.stream().map(product -> ProductResponseDto.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .slug(product.getSlug())
+                .description(product.getDescription())
+                .price(product.getPrice())
+                .imageUrl(product.getImageUrl())
+                .build()).toList();
+
+        return ResponseEntity.ok(response);
     }
 
 

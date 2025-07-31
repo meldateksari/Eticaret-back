@@ -28,6 +28,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findByCategoryId(Long categoryId);
 
+
     @Query("SELECT DISTINCT p FROM Product p JOIN p.genderCategories gc WHERE gc.id IN :genderCategoryIds")
     List<Product> findProductsByGenderCategoryIds(@Param("genderCategoryIds") List<Long> genderCategoryIds);
+
+    List<Product> findByIsActiveTrue(org.springframework.data.domain.Pageable pageable);
+
+
 }
