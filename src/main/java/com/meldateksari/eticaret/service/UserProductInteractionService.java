@@ -35,19 +35,19 @@ public class UserProductInteractionService {
     }
     public List<Product> recommendProducts(Long userId) {
         // 1. Kullanıcının etkileşim geçmişini al
-        List<UserProductInteraction> interactions = interactionRepository.findByUserId(userId);
-
+        List<UserProductInteraction> interactions = interactionRepository.findByUserIdOrderByTimestampDesc(userId);
+        return interactions.stream().map(m -> m.getProduct()).toList();
         // 2. En çok baktığı kategoriyi/markanın ürünlerini bul
-        Map<String, Long> brandCount = interactions.stream()
-                .collect(Collectors.groupingBy(i -> i.getProduct().getBrand(), Collectors.counting()));
-
-        String mostViewedBrand = brandCount.entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse(null);
+//        Map<String, Long> brandCount = interactions.stream()
+//                .collect(Collectors.groupingBy(i -> i.getProduct().getBrand(), Collectors.counting()));
+//
+//        String mostViewedBrand = brandCount.entrySet().stream()
+//                .max(Map.Entry.comparingByValue())
+//                .map(Map.Entry::getKey)
+//                .orElse(null);
 
         // 3. O markaya ait başka ürünleri öner
-        return productRepository.findByIsActiveTrue(PageRequest.of(0, 10));
+//        return productRepository.findByIsActiveTrue(PageRequest.of(0, 10));
 
     }
 

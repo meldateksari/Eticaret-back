@@ -7,12 +7,12 @@ import com.meldateksari.eticaret.model.User;
 import com.meldateksari.eticaret.model.UserProductInteraction;
 import com.meldateksari.eticaret.repository.ProductRepository;
 import com.meldateksari.eticaret.repository.UserRepository;
-import com.meldateksari.eticaret.security.CustomUserDetails;
 import com.meldateksari.eticaret.service.UserProductInteractionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -81,13 +81,14 @@ public class UserProductInteractionController  {
     private Long getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()
-                && authentication.getPrincipal() instanceof CustomUserDetails) {
-            Long id = ((CustomUserDetails) authentication.getPrincipal()).getId();
+                && authentication.getPrincipal() instanceof User) {
+            Long id = ((User) authentication.getPrincipal()).getId();
             System.out.println("🔍 Aktif kullanıcı ID: " + id);
             return id;
         }
         System.out.println("❌ Kullanıcı bulunamadı veya login değil.");
         return null;
     }
+
 
 }

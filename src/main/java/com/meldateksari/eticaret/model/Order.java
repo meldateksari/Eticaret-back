@@ -1,4 +1,5 @@
 package com.meldateksari.eticaret.model;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.meldateksari.eticaret.enums.PaymentStatus;
 import jakarta.persistence.*;
@@ -24,6 +25,7 @@ public class Order {
     // Kullanıcı silinemezse ON DELETE RESTRICT davranışı zaten varsayılandır (cascade yok)
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
     private User user;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")

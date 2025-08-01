@@ -69,22 +69,29 @@ public class Product {
     }
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<ProductImage> images;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<Review> reviews = new ArrayList<>();
 
     @OneToMany(mappedBy = "product")
+    @JsonIgnore
     private List<CartItem> cartItems = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private List<UserProductInteraction> interactions;
 
     @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
     private ProductFeature productFeature;
+
 
     // Cinsiyet kategorisi gibi çoktan çoğa ilişki
     @ManyToMany

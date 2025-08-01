@@ -54,6 +54,11 @@ public class OrderService {
 
 
         Order savedOrder = orderRepository.save(order);
+
+        //cart tablosundan ürünleri getir
+        //Orderitems a kaydet
+        //cart ürünlerini sil
+
         return OrderMapper.toOrderDto(savedOrder);
     }
 
@@ -72,5 +77,12 @@ public class OrderService {
 
     public void deleteOrder(Long orderId) {
         orderRepository.deleteById(orderId);
+    }
+
+    public OrderDto updatePayment(Long orderId, PaymentStatus paymentStatus) {
+        Order order = orderRepository.findById(orderId).orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setPaymentStatus(paymentStatus);
+        orderRepository.save(order);
+        return OrderMapper.toOrderDto(order);
     }
 }

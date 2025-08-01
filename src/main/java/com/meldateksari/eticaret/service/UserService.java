@@ -126,12 +126,13 @@ public class UserService {
     }
 
     public AuthResponse login(LoginRequestDto dto) {
-        authenticationManager.authenticate(
+        Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         dto.getEmail(),
                         dto.getPassword()
                 )
         );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         User user = userRepository.findByEmail(dto.getEmail()).orElse(null);
         String token = jwtService.generateToken(user);
         return AuthResponse.builder().token(token).user(user).build();

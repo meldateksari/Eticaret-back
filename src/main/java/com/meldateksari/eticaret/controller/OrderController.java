@@ -2,6 +2,7 @@ package com.meldateksari.eticaret.controller;
 
 import com.meldateksari.eticaret.dto.CreateOrderRequest;
 import com.meldateksari.eticaret.dto.OrderDto;
+import com.meldateksari.eticaret.enums.PaymentStatus;
 import com.meldateksari.eticaret.service.OrderService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,5 +39,10 @@ public class OrderController {
     public ResponseEntity<Void> deleteOrder(@PathVariable Long orderId) {
         orderService.deleteOrder(orderId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/updatePayment/{orderId}/{paymentStatus}")
+    public ResponseEntity<OrderDto> updatePayment(@PathVariable Long orderId, @PathVariable PaymentStatus paymentStatus) {
+        return ResponseEntity.ok(orderService.updatePayment(orderId, paymentStatus));
     }
 }

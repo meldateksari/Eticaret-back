@@ -8,6 +8,6 @@ import java.util.List;
 
 @Repository
 public interface UserProductInteractionRepository extends JpaRepository<UserProductInteraction, Long> {
-    List<UserProductInteraction> findByUserId(Long userId);
+    List<UserProductInteraction> findByUserIdOrderByTimestampDesc(Long userId);
     List<UserProductInteraction> findByProductId(Long productId);
 }
