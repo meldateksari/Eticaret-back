@@ -4,15 +4,14 @@ import com.meldateksari.eticaret.dto.CreateOrderRequest;
 import com.meldateksari.eticaret.dto.OrderDto;
 import com.meldateksari.eticaret.dto.OrderMapper;
 import com.meldateksari.eticaret.enums.PaymentStatus;
-import com.meldateksari.eticaret.model.Address;
-import com.meldateksari.eticaret.model.Order;
-import com.meldateksari.eticaret.model.User;
-import com.meldateksari.eticaret.repository.AddressRepository;
-import com.meldateksari.eticaret.repository.OrderRepository;
-import com.meldateksari.eticaret.repository.UserRepository;
+import com.meldateksari.eticaret.model.*;
+import com.meldateksari.eticaret.repository.*;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -23,13 +22,20 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
+    @Autowired
+    private CartItemRepository cartItemRepository;
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+    @Autowired
+    private CartRepository cartRepository;
+
 
     public OrderService(OrderRepository orderRepository, UserRepository userRepository, AddressRepository addressRepository) {
         this.orderRepository = orderRepository;
         this.userRepository = userRepository;
         this.addressRepository = addressRepository;
     }
-
+    @Transactional
     public OrderDto createOrder(CreateOrderRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -54,10 +60,39 @@ public class OrderService {
 
 
         Order savedOrder = orderRepository.save(order);
-
         //cart tablosundan ürünleri getir
         //Orderitems a kaydet
         //cart ürünlerini sil
+
+
+        // 1. Kullanıcının sepetini bul
+        Cart cart = cartRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        // 2. Sepetteki ürünleri getir
+        List<CartItem> cartItems = cartItemRepository.findByCartId(cart.getId());
+        if (cartItems.isEmpty()) {
+            throw new RuntimeException("Cart is empty");
+        }
+
+        // 3. OrderItems'a kaydet
+        List<OrderItem> orderItems = new ArrayList<>();
+        for (CartItem cartItem : cartItems) {
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(savedOrder);
+            orderItem.setProduct(cartItem.getProduct());
+            orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setPriceAtPurchase(cartItem.getProduct().getPrice());
+            orderItems.add(orderItem);
+        }
+        System.out.println("Kayıt ediliyor...");
+        orderItemRepository.saveAll(orderItems);
+        System.out.println("Kayıt başarılı");
+
+        // 4. Sepeti temizle
+        cartItemRepository.deleteByCartId(cart.getId());
+
+
 
         return OrderMapper.toOrderDto(savedOrder);
     }

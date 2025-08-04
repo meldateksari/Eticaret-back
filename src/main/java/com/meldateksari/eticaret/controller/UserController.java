@@ -9,9 +9,20 @@ import com.meldateksari.eticaret.service.UserProductInteractionService;
 import com.meldateksari.eticaret.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 @CrossOrigin(origins = "http://localhost:4200", methods = { RequestMethod.PUT, RequestMethod.GET, RequestMethod.POST })
 @RestController
 @RequestMapping("/api/users")
@@ -80,6 +91,30 @@ public class UserController {
                 .imageUrl(product.getImageUrl())
                 .build()).toList();
 
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/upload-profile-image")
+    public ResponseEntity<Map<String, String>> uploadProfileImage(@RequestParam("file") MultipartFile file,
+                                                                  @AuthenticationPrincipal User user) throws IOException {
+
+        // 1. File'ı sunucuda bir klasöre kaydet
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        Path uploadPath = Paths.get("uploads/profile-images");
+        Files.createDirectories(uploadPath);
+
+        Path filePath = uploadPath.resolve(fileName);
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+        // 2. URL üret (bu URL frontend'e dönecek)
+        String imageUrl = "/uploads/profile-images/" + fileName;
+
+        // 3. Kullanıcıya kaydet
+        user.setProfileImageUrl(imageUrl);
+        userService.getUserRepository().save(user);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("imageUrl", imageUrl);
         return ResponseEntity.ok(response);
     }
 

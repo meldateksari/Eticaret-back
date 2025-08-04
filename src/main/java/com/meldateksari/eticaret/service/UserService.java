@@ -9,6 +9,7 @@ import com.meldateksari.eticaret.auth.config.SecurityConfig;
 import com.meldateksari.eticaret.auth.service.JwtService;
 import com.meldateksari.eticaret.model.User;
 import com.meldateksari.eticaret.repository.UserRepository;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class UserService {
 
+    @Getter
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;

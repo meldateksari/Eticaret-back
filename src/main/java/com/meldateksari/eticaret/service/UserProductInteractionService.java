@@ -12,8 +12,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,9 +32,23 @@ public class UserProductInteractionService {
      * Bu metot, ana thread'i bloke etmez ve uygulamanın performansını artırır.
      */
     @Async
-    public void logInteraction(UserProductInteraction interaction) {
-        interactionRepository.save(interaction);
+    public void logInteraction(UserProductInteraction newInteraction) {
+        Optional<UserProductInteraction> existingInteractionOpt =
+                interactionRepository.findByUserIdAndProductIdAndInteractionType(
+                        newInteraction.getUser().getId(),
+                        newInteraction.getProduct().getId(),
+                        newInteraction.getInteractionType()
+                );
+
+        if (existingInteractionOpt.isPresent()) {
+            UserProductInteraction existingInteraction = existingInteractionOpt.get();
+            existingInteraction.setTimestamp(LocalDateTime.now());
+            interactionRepository.save(existingInteraction);
+        } else {
+            interactionRepository.save(newInteraction);
+        }
     }
+
     public List<Product> recommendProducts(Long userId) {
         // 1. Kullanıcının etkileşim geçmişini al
         List<UserProductInteraction> interactions = interactionRepository.findByUserIdOrderByTimestampDesc(userId);

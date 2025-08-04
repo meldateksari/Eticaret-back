@@ -40,12 +40,18 @@ public class CartItemService {
                     existingItem.setQuantity(quantity);
                     return cartItemRepository.save(existingItem);
                 })
-                .orElseGet(() -> cartItemRepository.save(CartItem.builder()
-                        .cart(cart)
-                        .product(product)
-                        .quantity(quantity)
-                        .build()));
+                .orElseGet(() -> {
+                    CartItem newItem = CartItem.builder()
+                            .cart(cart)
+                            .product(product)
+                            .quantity(quantity)
+                            .build();
+
+                    cart.getItems().add(newItem); // ✅ Burası kritik
+                    return cartItemRepository.save(newItem);
+                });
     }
+
 
     public List<CartItem> getCartItems(Long cartId) {
         return cartItemRepository.findByCartId(cartId);

@@ -42,6 +42,8 @@ public class UserProductInteractionController  {
             if (currentUserId != null) {
                 Optional<User> currentUserOptional = userRepository.findById(currentUserId);
                 currentUserOptional.ifPresent(user -> {
+                    //useri ve productid ye göre varsa timestampi güncelle yoksa oluştur ve bunu service içinde yap
+
                     UserProductInteraction interaction = UserProductInteraction.builder()
                             .user(user)
                             .product(viewedProductOptional.get())
