@@ -1,13 +1,17 @@
 package com.meldateksari.eticaret.service;
 
+import com.meldateksari.eticaret.dto.ReviewDto;
 import com.meldateksari.eticaret.model.Product;
 import com.meldateksari.eticaret.model.Review;
 import com.meldateksari.eticaret.model.User;
-import com.meldateksari.eticaret.repository.ReviewRepository;
 import com.meldateksari.eticaret.repository.ProductRepository;
+import com.meldateksari.eticaret.repository.ReviewRepository;
 import com.meldateksari.eticaret.repository.UserRepository;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ReviewService {
@@ -22,35 +26,55 @@ public class ReviewService {
         this.userRepository = userRepository;
     }
 
-    public Review createReview(Long productId, Long userId, Byte rating, String comment) {
-        if (rating < 1 || rating > 5) {
+    public ReviewDto createReview(ReviewDto reviewDto) {
+        if (reviewDto.getRating() < 1 || reviewDto.getRating() > 5) {
             throw new IllegalArgumentException("Rating must be between 1 and 5.");
         }
 
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findById(reviewDto.getProductId())
                 .orElseThrow(() -> new RuntimeException("Product not found"));
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(reviewDto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + reviewDto.getUserId()));
+
 
         Review review = Review.builder()
                 .product(product)
                 .user(user)
-                .rating(rating)
-                .comment(comment)
+                .rating(reviewDto.getRating())
+                .comment(reviewDto.getComment())
+                .createdAt(LocalDateTime.now())
                 .build();
 
-        return reviewRepository.save(review);
+        Review savedReview = reviewRepository.save(review);
+
+        return convertToDto(savedReview);
     }
 
-    public List<Review> getReviewsByProduct(Long productId) {
-        return reviewRepository.findByProductId(productId);
+    public List<ReviewDto> getReviewsByProduct(Long productId) {
+        return reviewRepository.findByProductId(productId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
-    public List<Review> getReviewsByUser(Long userId) {
-        return reviewRepository.findByUserId(userId);
+    public List<ReviewDto> getReviewsByUser(Long userId) {
+        return reviewRepository.findByUserId(userId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     public void deleteReview(Long reviewId) {
         reviewRepository.deleteById(reviewId);
+    }
+
+    // DTO'ya dönüştürme işlemi
+    private ReviewDto convertToDto(Review review) {
+        return ReviewDto.builder()
+                .id(review.getId())
+                .productId(review.getProduct().getId())
+                .userId(review.getUser().getId())
+                .rating(review.getRating())
+                .comment(review.getComment())
+                .createdAt(review.getCreatedAt())
+                .build();
     }
 }

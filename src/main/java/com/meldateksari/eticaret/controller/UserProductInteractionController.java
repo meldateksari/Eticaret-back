@@ -54,7 +54,6 @@ public class UserProductInteractionController  {
                 });
             }
 
-
             Product product = viewedProductOptional.get();
             ProductResponseDto productDto = ProductResponseDto.builder()
                     .id(product.getId())

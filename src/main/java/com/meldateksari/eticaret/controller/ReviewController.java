@@ -1,8 +1,10 @@
 package com.meldateksari.eticaret.controller;
 
-import com.meldateksari.eticaret.model.Review;
+import com.meldateksari.eticaret.dto.ReviewDto;
 import com.meldateksari.eticaret.service.ReviewService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -18,21 +20,23 @@ public class ReviewController {
     }
 
     @PostMapping
-    public ResponseEntity<Review> createReview(@RequestParam Long productId,
-                                               @RequestParam Long userId,
-                                               @RequestParam Byte rating,
-                                               @RequestParam(required = false) String comment) {
-        return ResponseEntity.ok(reviewService.createReview(productId, userId, rating, comment));
+    public ResponseEntity<ReviewDto> createReview(@RequestBody ReviewDto reviewDto) {
+        ReviewDto createdReview = reviewService.createReview(reviewDto);
+        return ResponseEntity.ok(createdReview);
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<Review>> getReviewsByProduct(@PathVariable Long productId) {
-        return ResponseEntity.ok(reviewService.getReviewsByProduct(productId));
+    public ResponseEntity<List<ReviewDto>> getReviewsByProduct(@PathVariable Long productId) {
+        List<ReviewDto> reviews = reviewService.getReviewsByProduct(productId);
+        return ResponseEntity.ok(reviews);
     }
 
+
+
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Review>> getReviewsByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(reviewService.getReviewsByUser(userId));
+    public ResponseEntity<List<ReviewDto>> getReviewsByUser(@PathVariable Long userId) {
+        List<ReviewDto> reviews = reviewService.getReviewsByUser(userId);
+        return ResponseEntity.ok(reviews);
     }
 
     @DeleteMapping("/{id}")
