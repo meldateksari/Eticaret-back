@@ -122,4 +122,7 @@ public class User implements UserDetails {
         return isActive != null && isActive;
     }
 
+    @Transient
+    private byte[] image;
+
 }

@@ -18,10 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @CrossOrigin(origins = "http://localhost:4200", methods = { RequestMethod.PUT, RequestMethod.GET, RequestMethod.POST })
 @RestController
@@ -98,27 +95,31 @@ public class UserController {
     public ResponseEntity<Map<String, String>> uploadProfileImage(@RequestParam("file") MultipartFile file,
                                                                   @AuthenticationPrincipal User user) throws IOException {
 
-        // 1. File'ı sunucuda bir klasöre kaydet
+        // 1. Fiziksel olarak kaydet (isteğe bağlı, veri kaybı olmasın)
         String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-        Path uploadPath = Paths.get("uploads/profile-images");
+        Path uploadPath = Paths.get("C:\\uploads\\profile-images\\");
         Files.createDirectories(uploadPath);
 
         Path filePath = uploadPath.resolve(fileName);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        // 2. URL üret (bu URL frontend'e dönecek)
-        String imageUrl = "/uploads/profile-images/" + fileName;
-
-        // 3. Kullanıcıya kaydet
+        // 2. Kullanıcıya dosya yolu kaydet (DB'de saklansın)
+        String imageUrl = "C:\\uploads\\profile-images\\" + fileName;
         user.setProfileImageUrl(imageUrl);
         userService.getUserRepository().save(user);
 
+        // 3. Base64 oluştur
+        String contentType = file.getContentType(); // image/jpeg, image/png vs.
+        byte[] bytes = file.getBytes();
+        String base64 = Base64.getEncoder().encodeToString(bytes);
+
+        String base64Image = "data:" + contentType + ";base64," + base64;
+
+        // 4. Geri dön
         Map<String, String> response = new HashMap<>();
-        response.put("imageUrl", imageUrl);
+        response.put("imageUrl", base64Image); // frontend doğrudan gösterir
         return ResponseEntity.ok(response);
     }
-
-
 
 
 }

@@ -20,6 +20,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -52,22 +58,20 @@ public class UserService {
     }
 
     public User updateUser(Long id, User updatedUser) {
-        return userRepository.findById(id)
-                .map(user -> {
-                    user.setFirstName(updatedUser.getFirstName());
-                    user.setLastName(updatedUser.getLastName());
-                    user.setEmail(updatedUser.getEmail());
-                    user.setPhoneNumber(updatedUser.getPhoneNumber());
-                    user.setIsActive(updatedUser.getIsActive());
+        return userRepository.findById(id).map(user -> {
+            user.setFirstName(updatedUser.getFirstName());
+            user.setLastName(updatedUser.getLastName());
+            user.setEmail(updatedUser.getEmail());
+            user.setPhoneNumber(updatedUser.getPhoneNumber());
+            user.setIsActive(updatedUser.getIsActive());
+            user.setImage(imageSet(user));
+            // Sadece yeni şifre gönderildiyse güncelle
+            if (updatedUser.getPasswordHash() != null && !updatedUser.getPasswordHash().isEmpty()) {
+                user.setPasswordHash(passwordEncoder.encode(updatedUser.getPasswordHash()));
+            }
 
-                    // Sadece yeni şifre gönderildiyse güncelle
-                    if (updatedUser.getPasswordHash() != null && !updatedUser.getPasswordHash().isEmpty()) {
-                        user.setPasswordHash(passwordEncoder.encode(updatedUser.getPasswordHash()));
-                    }
-
-                    return userRepository.save(user);
-                })
-                .orElseThrow(() -> new RuntimeException("User not found with id " + id));
+            return userRepository.save(user);
+        }).orElseThrow(() -> new RuntimeException("User not found with id " + id));
     }
 
     public void deleteUser(Long id) {
@@ -76,16 +80,14 @@ public class UserService {
 
     //kullanıcıya rol atama
     public User assignRoleToUser(Long userId, Role role) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         user.getRoles().add(role);
         return userRepository.save(user);
     }
 
 
     public void updatePassword(Long id, UpdatePasswordRequestDto dto) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id " + id));
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with id " + id));
 
         // 1. currentPassword kontrolü
         if (dto.getCurrentPassword() == null || dto.getCurrentPassword().isEmpty()) {
@@ -105,7 +107,6 @@ public class UserService {
         user.setPasswordHash(passwordEncoder.encode(dto.getNewPassword()));
         userRepository.save(user);
     }
-
 
 
     public AuthResponse register(RegisterRequestDto dto) {
@@ -128,16 +129,35 @@ public class UserService {
     }
 
     public AuthResponse login(LoginRequestDto dto) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        dto.getEmail(),
-                        dto.getPassword()
-                )
-        );
+        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(dto.getEmail(), dto.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         User user = userRepository.findByEmail(dto.getEmail()).orElse(null);
+        user.setImage(imageSet(user));
         String token = jwtService.generateToken(user);
         return AuthResponse.builder().token(token).user(user).build();
+    }
+
+    private byte[] imageSet(User user) {
+        String relativePath = user.getProfileImageUrl();  // Örnek: /uploads/profile-images/xyz.jpg
+        if (relativePath == null || relativePath.isEmpty()) {
+            return null;
+        }
+
+        // Temel klasörü tanımlayın
+        String fullPath = relativePath.replace("/", "\\");
+
+        File file = new File(fullPath);
+        if (!file.exists()) {
+            System.out.println("Dosya bulunamadı: " + fullPath);
+            return null;
+        }
+
+        try {
+            return Files.readAllBytes(file.toPath());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
 

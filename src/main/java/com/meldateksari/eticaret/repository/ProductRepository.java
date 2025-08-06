@@ -33,6 +33,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findProductsByGenderCategoryIds(@Param("genderCategoryIds") List<Long> genderCategoryIds);
 
     List<Product> findByIsActiveTrue(org.springframework.data.domain.Pageable pageable);
+    List<Product> findTop3ByOrderByCreatedAtDesc();
 
 
 }

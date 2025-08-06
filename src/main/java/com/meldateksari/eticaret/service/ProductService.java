@@ -148,4 +148,11 @@ public class ProductService {
 
         return builder.build();
     }
+
+    public List<ProductResponseDto> getLatestProducts() {
+        return productRepository.findTop3ByOrderByCreatedAtDesc().stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
 }

@@ -78,4 +78,10 @@ public class ProductController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/latest")
+    public ResponseEntity<List<ProductResponseDto>> getLatestProducts() {
+        List<ProductResponseDto> latestProducts = productService.getLatestProducts();
+        return ResponseEntity.ok(latestProducts);
+    }
+
 }
