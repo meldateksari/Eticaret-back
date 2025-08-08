@@ -85,7 +85,7 @@ public class CategoryService {
      * Bu metot, frontend'den gelen 'type=gender' parametresiyle kullanılabilir.
      */
     public List<CategoryDto> getGenderCategories() {
-        List<String> genderCategoryNames = Arrays.asList("Kadın", "Erkek", "Unisex");
+        List<String> genderCategoryNames = Arrays.asList("woman", "man");
         return categoryRepository.findByNameIn(genderCategoryNames).stream()
                 .map(CategoryMapper::toCategoryDto) // Category'den CategoryDto'ya dönüştür
                 .collect(Collectors.toList());
