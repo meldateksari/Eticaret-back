@@ -1,13 +1,13 @@
 package com.meldateksari.eticaret.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.*;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.util.HashSet;
 import java.util.Set;
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 
 
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -37,6 +37,6 @@ public class Category {
     private Set<Category> children = new HashSet<>();
 
     @ManyToMany(mappedBy = "genderCategories")
-    @JsonBackReference
+
     private Set<Product> products = new HashSet<>();
 }

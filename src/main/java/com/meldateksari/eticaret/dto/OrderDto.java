@@ -1,5 +1,6 @@
 package com.meldateksari.eticaret.dto;
 
+import com.meldateksari.eticaret.enums.OrderStatus;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +17,7 @@ public class OrderDto {
     private Long userId;
     private String orderDate;
     private BigDecimal totalAmount;
-    private String status;
+    private OrderStatus status;
     private Long shippingAddressId;
     private Long billingAddressId;
     private List<OrderItemDto> orderItems;

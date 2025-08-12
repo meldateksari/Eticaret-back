@@ -28,5 +28,5 @@ public class ProductFeature {
     private String size;
 
     @Column(name = "technical_specs", columnDefinition = "json")
-    private String technicalSpecs; // JSON formatında string olarak saklanır
+    private String technicalSpecs;
 }

@@ -43,21 +43,29 @@ public class SecurityConfig {
         http
                 .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests((request) -> request
+                .authorizeHttpRequests(req -> req
+                        // Auth end-point'leri serbest
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // Products - listeleme/görüntüleme herkese açık
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
+
+                        // Products - değiştirici işlemler yetki ister
+                        .requestMatchers(HttpMethod.POST,   "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,    "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+
+                        // geri kalan her şey auth ister (istersen bunu da daraltabilirsin)
                         .anyRequest().authenticated()
                 )
-                .sessionManagement((session) -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-                .logout((logout) -> logout
-                        .logoutSuccessHandler((request, response, authentication) ->
-                                SecurityContextHolder.clearContext()
-                        )
+                .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
+                        .logoutSuccessHandler((request, response, authentication) -> SecurityContextHolder.clearContext())
                 );
+
         return http.build();
     }
     @Bean

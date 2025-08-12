@@ -1,6 +1,7 @@
 package com.meldateksari.eticaret.service;
 
-import com.meldateksari.eticaret.dto.CategoryMapper;
+import com.meldateksari.eticaret.dto.CategoryDto;
+import com.meldateksari.eticaret.dto.ProductImageDto;
 import com.meldateksari.eticaret.dto.ProductResponseDto;
 import com.meldateksari.eticaret.model.Category;
 import com.meldateksari.eticaret.model.Product;
@@ -9,10 +10,10 @@ import com.meldateksari.eticaret.repository.CategoryRepository;
 import com.meldateksari.eticaret.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -23,40 +24,57 @@ import java.util.stream.Collectors;
 @Service
 public class ProductService {
 
-    @Autowired
-    private ProductRepository productRepository;
-
-    @Autowired
-    private CategoryRepository categoryRepository;
+    @Autowired private ProductRepository productRepository;
+    @Autowired private CategoryRepository categoryRepository;
+    private String toSlug(String name) {
+        if (name == null) return null;
+        String s = name.trim().toLowerCase()
+                .replaceAll("[^a-z0-9\\s-]", "")
+                .replaceAll("\\s+", "-")
+                .replaceAll("-+", "-");
+        return s;
+    }
 
     @Transactional(readOnly = true)
     public List<ProductResponseDto> getFilteredProducts(List<Long> genderCategoryIds, Long categoryId, Boolean isActive) {
         List<Long> finalGenderIds = (genderCategoryIds != null && !genderCategoryIds.isEmpty()) ? genderCategoryIds : null;
-
-        return productRepository.findWithFilters(finalGenderIds, categoryId, isActive).stream()
+        return productRepository.findWithFilters(finalGenderIds, categoryId, isActive)
+                .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public ProductResponseDto getProductById(Long id) {
-        Optional<Product> optionalProduct = productRepository.findById(id);
-        if (optionalProduct.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
-        }
-
-        Product product = optionalProduct.get();
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
         return convertToDto(product);
     }
 
     @Transactional
     public ProductResponseDto createProduct(Product product) {
-        // İlişkili nesneleri yönet
+        // 1) slug boşsa isimden üret
+        if (product.getSlug() == null || product.getSlug().isBlank()) {
+            product.setSlug(toSlug(product.getName()));
+        } else {
+            product.setSlug(toSlug(product.getSlug()));
+        }
+
+        // 2) benzersiz yap
+        String base = product.getSlug();
+        String candidate = base;
+        int i = 1;
+        while (productRepository.existsBySlug(candidate)) {
+            candidate = base + "-" + i++;
+        }
+        product.setSlug(candidate);
+
+        // kategori ve genderCategories mevcut kodun
         if (product.getCategory() != null && product.getCategory().getId() != null) {
             Category category = categoryRepository.findById(product.getCategory().getId())
                     .orElseThrow(() -> new EntityNotFoundException("Category not found with id: " + product.getCategory().getId()));
             product.setCategory(category);
         }
-
         if (product.getGenderCategories() != null && !product.getGenderCategories().isEmpty()) {
             Set<Category> genderCategories = product.getGenderCategories().stream()
                     .map(gc -> categoryRepository.findById(gc.getId())
@@ -65,94 +83,123 @@ public class ProductService {
             product.setGenderCategories(genderCategories);
         }
 
-        Product savedProduct = productRepository.save(product);
-        return convertToDto(savedProduct);
+        Product saved = productRepository.save(product);
+        return convertToDto(saved);
     }
 
     @Transactional
-    public ProductResponseDto updateProduct(Long id, Product updatedProduct) {
-        return productRepository.findById(id)
-                .map(product -> {
-                    product.setName(updatedProduct.getName());
-                    product.setSlug(updatedProduct.getSlug());
-                    product.setDescription(updatedProduct.getDescription());
-                    product.setPrice(updatedProduct.getPrice());
-                    product.setStockQuantity(updatedProduct.getStockQuantity());
-                    product.setBrand(updatedProduct.getBrand());
-                    product.setImageUrl(updatedProduct.getImageUrl());
-                    product.setWeight(updatedProduct.getWeight());
-                    product.setIsActive(updatedProduct.getIsActive());
-
-                    if (updatedProduct.getCategory() != null && updatedProduct.getCategory().getId() != null) {
-                        Category newCategory = categoryRepository.findById(updatedProduct.getCategory().getId())
-                                .orElseThrow(() -> new EntityNotFoundException("Category not found with id: " + updatedProduct.getCategory().getId()));
-                        product.setCategory(newCategory);
-                    } else {
-                        product.setCategory(null);
-                    }
-
-                    if (updatedProduct.getGenderCategories() != null) {
-                        Set<Category> updatedGenderCategories = updatedProduct.getGenderCategories().stream()
-                                .map(gc -> categoryRepository.findById(gc.getId())
-                                        .orElseThrow(() -> new EntityNotFoundException("Gender category not found with id: " + gc.getId())))
-                                .collect(Collectors.toSet());
-                        product.setGenderCategories(updatedGenderCategories);
-                    } else {
-                        product.setGenderCategories(null);
-                    }
-
-                    return convertToDto(productRepository.save(product));
-                })
+    public ProductResponseDto updateProduct(Long id, ProductResponseDto dto, MultipartFile image, boolean removeImage) {
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Product not found with id: " + id));
+
+        product.setName(dto.getName());
+        product.setSlug(dto.getSlug());
+        product.setDescription(dto.getDescription());
+        product.setPrice(dto.getPrice());
+        product.setStockQuantity(dto.getStockQuantity());
+        product.setBrand(dto.getBrand());
+        product.setIsActive(Boolean.TRUE.equals(dto.getIsActive()));
+        product.setWeight(dto.getWeight());
+
+        // kategori
+        if (dto.getCategory() != null && dto.getCategory().getId() != null) {
+            Category newCategory = categoryRepository.findById(dto.getCategory().getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Category not found with id: " + dto.getCategory().getId()));
+            product.setCategory(newCategory);
+        } else {
+            product.setCategory(null);
+        }
+
+        // gender categories
+        if (dto.getGenderCategories() != null) {
+            Set<Category> updatedGenderCategories = dto.getGenderCategories().stream()
+                    .map(gc -> categoryRepository.findById(gc.getId())
+                            .orElseThrow(() -> new EntityNotFoundException("Gender category not found with id: " + gc.getId())))
+                    .collect(Collectors.toSet());
+            product.setGenderCategories(updatedGenderCategories);
+        } else {
+            product.setGenderCategories(null);
+        }
+
+        // Görsel işlemleri — sadece URL ile
+        if (removeImage) {
+            product.setImageUrl(null);
+        } else if (dto.getImageUrl() != null && !dto.getImageUrl().isEmpty()) {
+            product.setImageUrl(dto.getImageUrl());
+        }
+        // image MultipartFile parametresi kullanmıyoruz
+
+        Product saved = productRepository.save(product);
+        return convertToDto(saved);
     }
+
+
 
     @Transactional
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
     }
 
-    public ProductResponseDto convertToDto(Product product) {
-        ProductResponseDto.ProductResponseDtoBuilder builder = ProductResponseDto.builder()
-                .id(product.getId())
-                .name(product.getName())
-                .slug(product.getSlug())
-                .description(product.getDescription())
-                .price(product.getPrice())
-                .stockQuantity(product.getStockQuantity())
-                .brand(product.getBrand())
-                .imageUrl(product.getImageUrl())
-                .isActive(product.getIsActive())
-                .weight(product.getWeight())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt());
-
-        if (product.getImages() != null) {
-            builder.images(product.getImages().stream()
-                    .map(ProductImage::getImageUrl)
-                    .collect(Collectors.toList()));
-        } else {
-            builder.images(List.of());
-        }
-
-        if (product.getCategory() != null) {
-            builder.category(CategoryMapper.toCategoryDto(product.getCategory()));
-        }
-
-        if (product.getGenderCategories() != null && !product.getGenderCategories().isEmpty()) {
-            builder.genderCategories(product.getGenderCategories().stream()
-                    .map(CategoryMapper::toCategoryDto)
-                    .collect(Collectors.toList()));
-        } else {
-            builder.genderCategories(List.of());
-        }
-
-        return builder.build();
-    }
-
+    @Transactional(readOnly = true)
     public List<ProductResponseDto> getLatestProducts() {
-        return productRepository.findTop3ByOrderByCreatedAtDesc().stream()
+        return productRepository.findTop3ByOrderByCreatedAtDesc()
+                .stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
+    // ---- mapper YOK: manuel dönüşüm burada ----
+    private ProductResponseDto convertToDto(Product product) {
+        ProductResponseDto dto = new ProductResponseDto();
+        dto.setId(product.getId());
+        dto.setName(product.getName());
+        dto.setSlug(product.getSlug());
+        dto.setDescription(product.getDescription());
+        dto.setPrice(product.getPrice());
+        dto.setStockQuantity(product.getStockQuantity());
+        dto.setBrand(product.getBrand());
+        dto.setImageUrl(product.getImageUrl());
+        dto.setWeight(product.getWeight());
+        dto.setIsActive(product.getIsActive());
+        dto.setCreatedAt(product.getCreatedAt());
+        dto.setUpdatedAt(product.getUpdatedAt());
+
+        // category -> CategoryDto
+        if (product.getCategory() != null) {
+            CategoryDto c = new CategoryDto();
+            c.setId(product.getCategory().getId());
+            c.setName(product.getCategory().getName());
+            dto.setCategory(c);
+        }
+
+        // genderCategories -> List<CategoryDto>
+        if (product.getGenderCategories() != null && !product.getGenderCategories().isEmpty()) {
+            dto.setGenderCategories(
+                    product.getGenderCategories().stream().map(cat -> {
+                        CategoryDto cd = new CategoryDto();
+                        cd.setId(cat.getId());
+                        cd.setName(cat.getName());
+                        return cd;
+                    }).collect(Collectors.toList())
+            );
+        }
+
+        // images -> List<ProductImageDto>
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            dto.setImages(
+                    product.getImages().stream().map(this::toImageDto).collect(Collectors.toList())
+            );
+        }
+
+        return dto;
+    }
+
+    private ProductImageDto toImageDto(ProductImage img) {
+        ProductImageDto d = new ProductImageDto();
+        d.setId(img.getId());
+        d.setImageUrl(img.getImageUrl());
+        d.setIsThumbnail(img.getIsThumbnail());
+        d.setSortOrder(img.getSortOrder());
+        return d;
+    }
 }

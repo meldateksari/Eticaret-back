@@ -1,9 +1,17 @@
 package com.meldateksari.eticaret.enums;
 
 public enum PaymentStatus {
-    PENDING,
     PAID,
+    PENDING,
     FAILED,
-    REFUNDED
+    REFUNDED;
+
+    public static PaymentStatus from(String s) {
+        if (s == null) {
+            throw new IllegalArgumentException("paymentStatus is null");
+        }
+        return PaymentStatus.valueOf(s.trim().toUpperCase());
+    }
 }
+
 

@@ -1,6 +1,8 @@
 package com.meldateksari.eticaret.model;
+
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.meldateksari.eticaret.enums.OrderStatus;   // <— EKLENDİ
 import com.meldateksari.eticaret.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,18 +13,12 @@ import java.util.List;
 
 @Entity
 @Table(name = "orders")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Order {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Kullanıcı silinemezse ON DELETE RESTRICT davranışı zaten varsayılandır (cascade yok)
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonBackReference
@@ -35,18 +31,15 @@ public class Order {
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    @ManyToOne
-    @JoinColumn(name = "shipping_address_id")
+    @ManyToOne @JoinColumn(name = "shipping_address_id")
     private Address shippingAddress;
-    //Bir teslimat adresi silinmek istendiğinde, eğer bu adres bir siparişte kullanılmışsa, silme işlemi engellenir.
 
-    @ManyToOne
-    @JoinColumn(name = "billing_address_id")
+    @ManyToOne @JoinColumn(name = "billing_address_id")
     private Address billingAddress;
-    //Bir fatura adresi silinmek istendiğinde, eğer bu adres bir siparişte kullanılmışsa, silme işlemi engellenir.
 
-    @Column(nullable = false, length = 50)
-    private String status; // örn: PENDING, SHIPPED, DELIVERED
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 50)
+    private OrderStatus status;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_status", nullable = false, length = 50)
@@ -58,8 +51,10 @@ public class Order {
     @PrePersist
     protected void onCreate() {
         this.orderDate = LocalDateTime.now();
+        if (this.status == null) this.status = OrderStatus.CREATED;          // <— default
+        if (this.paymentStatus == null) this.paymentStatus = PaymentStatus.PENDING;
     }
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
-
 }

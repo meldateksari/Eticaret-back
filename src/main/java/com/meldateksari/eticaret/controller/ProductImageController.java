@@ -1,5 +1,6 @@
 package com.meldateksari.eticaret.controller;
 
+import com.meldateksari.eticaret.dto.ProductImageDto;
 import com.meldateksari.eticaret.model.ProductImage;
 import com.meldateksari.eticaret.service.ProductImageService;
 import lombok.RequiredArgsConstructor;
@@ -16,8 +17,8 @@ public class ProductImageController {
     private final ProductImageService productImageService;
 
     @PostMapping
-    public ResponseEntity<ProductImage> addImage(@RequestBody ProductImage productImage) {
-        return ResponseEntity.ok(productImageService.save(productImage));
+    public ResponseEntity<ProductImageDto> addImage(@RequestBody ProductImageDto dto) {
+        return ResponseEntity.ok(productImageService.add(dto));
     }
 
     @GetMapping("/product/{productId}")

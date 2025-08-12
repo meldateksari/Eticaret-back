@@ -3,6 +3,7 @@ package com.meldateksari.eticaret.service;
 import com.meldateksari.eticaret.dto.CreateOrderRequest;
 import com.meldateksari.eticaret.dto.OrderDto;
 import com.meldateksari.eticaret.dto.OrderMapper;
+import com.meldateksari.eticaret.enums.OrderStatus;
 import com.meldateksari.eticaret.enums.PaymentStatus;
 import com.meldateksari.eticaret.model.*;
 import com.meldateksari.eticaret.repository.*;
@@ -47,13 +48,14 @@ public class OrderService {
         Address billingAddress = request.getBillingAddressId() != null ?
                 addressRepository.findById(request.getBillingAddressId())
                         .orElseThrow(() -> new RuntimeException("Billing address not found")) : null;
-
         Order order = Order.builder()
                 .user(user)
                 .shippingAddress(shippingAddress)
                 .billingAddress(billingAddress)
                 .totalAmount(request.getTotalAmount() != null ? request.getTotalAmount() : BigDecimal.ZERO)
-                .status(request.getStatus() != null ? request.getStatus() : "CREATED")
+                .status(request.getStatus() != null
+                        ? OrderStatus.valueOf(request.getStatus().toUpperCase())
+                        : OrderStatus.CREATED)
                 .paymentStatus(request.getPaymentStatus() != null ? request.getPaymentStatus() : PaymentStatus.PENDING)
                 .trackingNumber(request.getTrackingNumber() != null ? request.getTrackingNumber() : UUID.randomUUID().toString())
                 .build();
@@ -99,10 +101,27 @@ public class OrderService {
 
 
     public List<OrderDto> getOrdersByUserId(Long userId) {
-        return orderRepository.findByUserId(userId).stream()
+        var list = orderRepository.findByUserId(userId);
+
+        System.out.println("repo bean  : " + orderRepository.getClass().getName());
+        System.out.println("result type: " + (list == null ? "null" : list.getClass().getName()));
+        if (list != null) {
+            list.stream().limit(3).forEach(o -> {
+                System.out.println("elem class: " + (o == null ? "null" : o.getClass().getName()));
+            });
+            System.out.println("size       : " + list.size());
+        }
+
+        var dtos = list.stream()
                 .map(OrderMapper::toOrderDto)
                 .collect(Collectors.toList());
+
+        // DTO sınıfını da doğrula
+        dtos.stream().limit(1).forEach(d -> System.out.println("DTO class : " + d.getClass().getName()));
+
+        return dtos;
     }
+
 
     public OrderDto getOrderById(Long orderId) {
         Order order = orderRepository.findById(orderId)
@@ -120,4 +139,13 @@ public class OrderService {
         orderRepository.save(order);
         return OrderMapper.toOrderDto(order);
     }
+    @Transactional
+    public OrderDto updateStatus(Long orderId, OrderStatus status) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+        order.setStatus(status);
+        orderRepository.save(order);
+        return OrderMapper.toOrderDto(order);
+    }
+
 }
