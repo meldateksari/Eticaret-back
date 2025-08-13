@@ -12,7 +12,14 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +34,38 @@ public class ProductImageServiceImpl implements ProductImageService {
     }
 
     @Override
-    public List<ProductImage> findByProductId(Long productId) {
-        return productImageRepository.findByProductId(productId);
+    public List<ProductImageDto> findByProductId(Long productId) {
+        List<ProductImage> imageList = productImageRepository.findByProductId(productId);
+
+
+
+        for (ProductImage productImage : imageList) {
+            String relativePath = productImage.getImageUrl();
+            if (relativePath != null && !relativePath.startsWith("http")) {
+                String fullPath = relativePath.replace("/", "\\");
+                File file = new File(fullPath);
+                if (!file.exists()) {
+//                    continue;
+                }
+//                try {
+//                    return Files.readAllBytes(file.toPath());
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                    return null;
+//                }
+            }
+
+            // Temel klasörü tanımlayın
+
+
+
+
+
+
+
+        }
+return null;
+
     }
 
     @Override
@@ -45,6 +82,24 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     @Transactional
     public ProductImageDto add(ProductImageDto dto) {
+        if (dto.getImage() != null) {
+            //TODO dosyaya kaydet
+            try {
+                // Kaydedilecek yol
+                Path path = Paths.get("C:\\uploads\\product-images\\", UUID.randomUUID().toString());
+                Files.createDirectories(path.getParent()); // klasör yoksa oluştur
+
+                // Byte dizisini dosyaya yaz
+                Files.write(path, dto.getImage());
+                dto.setImageUrl(path.toString());
+                System.out.println("Resim kaydedildi: " + path.toAbsolutePath());
+            } catch (IOException e) {
+                e.printStackTrace();
+                // Hata yönetimi
+            }
+        }
+
+
         ProductImage img = new ProductImage();
         img.setImageUrl(dto.getImageUrl());
         img.setIsThumbnail(Boolean.TRUE.equals(dto.getIsThumbnail()));

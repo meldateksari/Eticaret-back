@@ -9,8 +9,12 @@ import com.meldateksari.eticaret.auth.config.SecurityConfig;
 import com.meldateksari.eticaret.auth.service.JwtService;
 import com.meldateksari.eticaret.model.User;
 import com.meldateksari.eticaret.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.crossstore.ChangeSetPersister;
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -19,6 +23,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -27,13 +32,19 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+    @PersistenceContext
+    private EntityManager em;
 
     @Getter
     private final UserRepository userRepository;
@@ -73,16 +84,62 @@ public class UserService {
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("User not found with id " + id));
     }
+    @Transactional
+    public void deleteUser(Long userId) {
+        // 0) Kullanıcıyı yükle (remove için managed olmalı)
+        User user = em.find(User.class, userId);
+        if (user==null) {
+            throw new ResponseStatusException(NOT_FOUND, "User not found");
+        }
 
-    public void deleteUser(Long id) {
-        userRepository.deleteById(id);
+        // 1) Kullanıcının adres ID'leri
+        var addressIds = em.createQuery(
+                        "select a.id from Address a where a.user.id = :uid", Long.class)
+                .setParameter("uid", userId)
+                .getResultList();
+
+        // 2) Bu adreslere bağlı siparişlerde FK'ları NULL'a çek
+        if (!addressIds.isEmpty()) {
+            em.createQuery(
+                            "update Order o set o.billingAddress = null where o.billingAddress.id in :ids")
+                    .setParameter("ids", addressIds)
+                    .executeUpdate();
+
+            em.createQuery(
+                            "update Order o set o.shippingAddress = null where o.shippingAddress.id in :ids")
+                    .setParameter("ids", addressIds)
+                    .executeUpdate();
+
+            // 3) Adresleri sil
+            em.createQuery("delete from Address a where a.id in :ids")
+                    .setParameter("ids", addressIds)
+                    .executeUpdate();
+        }
+
+        // 4) Roller ilişkisinin temizlenmesi
+        //    - @ElementCollection(Set<Role>) veya @ManyToMany(Role) fark etmez: clear() + flush() güvenlidir
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            user.getRoles().clear();
+            em.flush(); // join/collection tablosu temizlensin
+        }
+
+        // 5) Kullanıcıyı sil
+        em.remove(user);
     }
 
-    //kullanıcıya rol atama
-    public User assignRoleToUser(Long userId, Role role) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-        user.getRoles().add(role);
-        return userRepository.save(user);
+    @Transactional
+    public User assignRoleToUser(Long userId, Role newRole) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (user.getRoles() == null) user.setRoles(new HashSet<>());
+
+        // TEK ROL politikası
+        if (!(user.getRoles().size() == 1 && user.getRoles().contains(newRole))) {
+            user.getRoles().clear();        // <-- önce hepsini sil
+            user.getRoles().add(newRole);   // <-- sonra yeni rolü ekle
+            user = userRepository.save(user);
+        }
+        return user;
     }
 
 

@@ -22,7 +22,7 @@ public class ProductImageController {
     }
 
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<ProductImage>> getImagesByProductId(@PathVariable Long productId) {
+    public ResponseEntity<List<ProductImageDto>> getImagesByProductId(@PathVariable Long productId) {
         return ResponseEntity.ok(productImageService.findByProductId(productId));
     }
 

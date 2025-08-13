@@ -11,4 +11,5 @@ public class ProductImageDto {
     private Boolean isThumbnail;
     private Integer sortOrder;
     private ProductResponseDto product;
+    private byte[] image;
 }

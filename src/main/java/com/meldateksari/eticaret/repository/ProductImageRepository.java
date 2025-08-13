@@ -1,5 +1,6 @@
 package com.meldateksari.eticaret.repository;
 
+import com.meldateksari.eticaret.dto.ProductImageDto;
 import com.meldateksari.eticaret.model.ProductImage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;

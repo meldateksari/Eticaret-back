@@ -7,7 +7,7 @@ import java.util.List;
 public interface ProductImageService {
     ProductImageDto add(ProductImageDto dto);
     ProductImage save(ProductImage productImage);
-    List<ProductImage> findByProductId(Long productId);
+    List<ProductImageDto> findByProductId(Long productId);
     void deleteById(Long id);
     void deleteByProductId(Long productId);
 }
