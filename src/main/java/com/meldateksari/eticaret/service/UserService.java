@@ -7,6 +7,7 @@ import com.meldateksari.eticaret.auth.dto.UpdatePasswordRequestDto;
 import com.meldateksari.eticaret.auth.enums.Role;
 import com.meldateksari.eticaret.auth.config.SecurityConfig;
 import com.meldateksari.eticaret.auth.service.JwtService;
+import com.meldateksari.eticaret.model.Address;
 import com.meldateksari.eticaret.model.User;
 import com.meldateksari.eticaret.repository.UserRepository;
 import jakarta.persistence.EntityManager;
@@ -15,6 +16,7 @@ import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -86,44 +88,42 @@ public class UserService {
     }
     @Transactional
     public void deleteUser(Long userId) {
-        // 0) Kullanıcıyı yükle (remove için managed olmalı)
         User user = em.find(User.class, userId);
-        if (user==null) {
-            throw new ResponseStatusException(NOT_FOUND, "User not found");
+        if (user == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+
+        // 0) roller (join table)
+        if (user.getRoles() != null) user.getRoles().clear();
+
+        // 1) adres id'leri
+        List<Long> addrIds = (user.getAddresses()==null) ? List.of()
+                : user.getAddresses().stream().map(Address::getId).toList();
+
+        if (!addrIds.isEmpty()) {
+            em.createQuery("""
+            update Order o set o.billingAddress = null
+             where o.billingAddress.id in :ids
+        """).setParameter("ids", addrIds).executeUpdate();
+
+            em.createQuery("""
+            update Order o set o.shippingAddress = null
+             where o.shippingAddress.id in :ids
+        """).setParameter("ids", addrIds).executeUpdate();
         }
 
-        // 1) Kullanıcının adres ID'leri
-        var addressIds = em.createQuery(
-                        "select a.id from Address a where a.user.id = :uid", Long.class)
+        // 2) kredi kartlarını sil — HATAYI KESEN KRİTİK ADIM
+        em.createQuery("delete from CreditCard c where c.user.id = :uid")
                 .setParameter("uid", userId)
-                .getResultList();
+                .executeUpdate();
 
-        // 2) Bu adreslere bağlı siparişlerde FK'ları NULL'a çek
-        if (!addressIds.isEmpty()) {
-            em.createQuery(
-                            "update Order o set o.billingAddress = null where o.billingAddress.id in :ids")
-                    .setParameter("ids", addressIds)
-                    .executeUpdate();
-
-            em.createQuery(
-                            "update Order o set o.shippingAddress = null where o.shippingAddress.id in :ids")
-                    .setParameter("ids", addressIds)
-                    .executeUpdate();
-
-            // 3) Adresleri sil
-            em.createQuery("delete from Address a where a.id in :ids")
-                    .setParameter("ids", addressIds)
-                    .executeUpdate();
+        // 3) adresleri sil
+        if (user.getAddresses() != null) {
+            for (Address a : user.getAddresses()) {
+                em.remove(em.contains(a) ? a : em.merge(a));
+            }
+            user.getAddresses().clear();
         }
 
-        // 4) Roller ilişkisinin temizlenmesi
-        //    - @ElementCollection(Set<Role>) veya @ManyToMany(Role) fark etmez: clear() + flush() güvenlidir
-        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
-            user.getRoles().clear();
-            em.flush(); // join/collection tablosu temizlensin
-        }
-
-        // 5) Kullanıcıyı sil
+        // 4) en son user
         em.remove(user);
     }
 

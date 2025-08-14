@@ -21,6 +21,12 @@ public class CartItemController {
         this.cartItemService = cartItemService;
     }
 
+    @GetMapping("/items")
+    public ResponseEntity<List<CartItemDto>> getAllItems() {
+        List<CartItemDto> items = cartItemService.getAllItems();
+        return ResponseEntity.ok(items);
+    }
+
     @PostMapping
     public ResponseEntity<CartItemDto> addOrUpdateCartItem(@RequestParam Long cartId,
                                                            @RequestParam Long productId,

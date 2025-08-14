@@ -10,6 +10,7 @@ import com.meldateksari.eticaret.repository.CategoryRepository;
 import com.meldateksari.eticaret.repository.ProductRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,9 @@ public class ProductService {
 
     @Autowired private ProductRepository productRepository;
     @Autowired private CategoryRepository categoryRepository;
+    @Autowired @Lazy
+    private ProductImageServiceImpl productImageService;
+
     private String toSlug(String name) {
         if (name == null) return null;
         String s = name.trim().toLowerCase()
@@ -149,7 +153,7 @@ public class ProductService {
     }
 
     // ---- mapper YOK: manuel dönüşüm burada ----
-    private ProductResponseDto convertToDto(Product product) {
+    public ProductResponseDto convertToDto(Product product) {
         ProductResponseDto dto = new ProductResponseDto();
         dto.setId(product.getId());
         dto.setName(product.getName());
@@ -183,14 +187,7 @@ public class ProductService {
                     }).collect(Collectors.toList())
             );
         }
-
-        // images -> List<ProductImageDto>
-        if (product.getImages() != null && !product.getImages().isEmpty()) {
-            dto.setImages(
-                    product.getImages().stream().map(this::toImageDto).collect(Collectors.toList())
-            );
-        }
-
+        dto.setImages(productImageService.findByProductId(product.getId()));
         return dto;
     }
 

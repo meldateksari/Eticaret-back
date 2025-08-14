@@ -1,5 +1,6 @@
 package com.meldateksari.eticaret.service;
 
+import com.meldateksari.eticaret.dto.CartItemDto;
 import com.meldateksari.eticaret.model.Cart;
 import com.meldateksari.eticaret.model.CartItem;
 import com.meldateksari.eticaret.model.Product;
@@ -10,6 +11,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CartItemService {
@@ -65,5 +67,20 @@ public class CartItemService {
     }
     public void clearCart(Long cartId) {
         cartItemRepository.deleteByCartId(cartId);
+    }
+
+
+    public List<CartItemDto> getAllItems() {
+        return cartItemRepository.findAll()
+                .stream()
+                .map(item -> new CartItemDto(
+                        item.getId(),
+                        item.getProduct().getId(),
+                        item.getProduct().getName(),
+                        item.getProduct().getImageUrl(),
+                        item.getProduct().getPrice(),
+                        item.getQuantity()
+                ))
+                .collect(Collectors.toList());
     }
 }

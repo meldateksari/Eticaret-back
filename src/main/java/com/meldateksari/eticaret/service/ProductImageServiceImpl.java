@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +28,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
+    private final ProductService productService;
 
     @Override
     public ProductImage save(ProductImage productImage) {
@@ -36,36 +38,31 @@ public class ProductImageServiceImpl implements ProductImageService {
     @Override
     public List<ProductImageDto> findByProductId(Long productId) {
         List<ProductImage> imageList = productImageRepository.findByProductId(productId);
-
-
-
-        for (ProductImage productImage : imageList) {
+        List<ProductImageDto> dtoList = imageList.stream().map(m -> {
+            return new ProductImageDto(
+                    m.getId(),
+                    m.getImageUrl(),
+                    m.getIsThumbnail(),
+                    m.getSortOrder()
+            );
+        }).toList();
+        for (ProductImageDto productImage : dtoList) {
             String relativePath = productImage.getImageUrl();
             if (relativePath != null && !relativePath.startsWith("http")) {
                 String fullPath = relativePath.replace("/", "\\");
                 File file = new File(fullPath);
                 if (!file.exists()) {
-//                    continue;
+                    continue;
                 }
-//                try {
-//                    return Files.readAllBytes(file.toPath());
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                    return null;
-//                }
+                try {
+                    productImage.setImage(Files.readAllBytes(file.toPath()));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    return null;
+                }
             }
-
-            // Temel klasörü tanımlayın
-
-
-
-
-
-
-
         }
-return null;
-
+        return dtoList;
     }
 
     @Override
@@ -83,7 +80,6 @@ return null;
     @Transactional
     public ProductImageDto add(ProductImageDto dto) {
         if (dto.getImage() != null) {
-            //TODO dosyaya kaydet
             try {
                 // Kaydedilecek yol
                 Path path = Paths.get("C:\\uploads\\product-images\\", UUID.randomUUID().toString());

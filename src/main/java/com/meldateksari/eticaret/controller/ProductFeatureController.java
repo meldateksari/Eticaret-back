@@ -1,33 +1,35 @@
 package com.meldateksari.eticaret.controller;
 
-import com.meldateksari.eticaret.model.ProductFeature;
+import com.meldateksari.eticaret.dto.ProductFeatureDto;
 import com.meldateksari.eticaret.service.ProductFeatureService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Optional;
-
 @RestController
-@RequestMapping("/api/product-features")
+@RequestMapping("/api/products/{productId}/features")
 @RequiredArgsConstructor
 public class ProductFeatureController {
 
     private final ProductFeatureService service;
 
-    @PostMapping
-    public ResponseEntity<ProductFeature> save(@RequestBody ProductFeature feature) {
-        return ResponseEntity.ok(service.save(feature));
+    // Create or Update (UPSERT)
+    @PutMapping
+    public ResponseEntity<ProductFeatureDto> upsert(
+            @PathVariable Long productId,
+            @RequestBody ProductFeatureDto body) {
+        body.setProductId(productId);
+        return ResponseEntity.ok(service.upsertByProductId(productId, body));
     }
 
-    @GetMapping("/product/{productId}")
-    public ResponseEntity<Optional<ProductFeature>> getByProductId(@PathVariable Long productId) {
-        return ResponseEntity.ok(service.findByProductId(productId));
+    @GetMapping
+    public ResponseEntity<ProductFeatureDto> get(@PathVariable Long productId) {
+        return ResponseEntity.ok(service.getByProductId(productId));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        service.deleteById(id);
+    @DeleteMapping
+    public ResponseEntity<Void> delete(@PathVariable Long productId) {
+        service.deleteByProductId(productId);
         return ResponseEntity.noContent().build();
     }
 }
